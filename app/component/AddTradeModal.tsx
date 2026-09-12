@@ -159,6 +159,14 @@ export default function AddTradeModal({
       }
     }
 
+    // For options, Side is not shown in the UI.
+    // Internally we keep it as LONG so existing
+    // database structure and P/L calculation continue to work.
+    const side =
+      form.asset_type === "OPTION"
+        ? "LONG"
+        : form.side;
+
     // Data common to both INSERT and UPDATE
     const tradeData = {
       trade_date: form.trade_date,
@@ -167,7 +175,7 @@ export default function AddTradeModal({
 
       asset_type: form.asset_type,
 
-      side: form.side,
+      side,
 
       option_type:
         form.asset_type === "OPTION"
@@ -350,12 +358,21 @@ export default function AddTradeModal({
               <SelectField
                 label="Asset Type"
                 value={form.asset_type}
-                onChange={(value) =>
+                onChange={(value) => {
                   updateField(
                     "asset_type",
                     value
-                  )
-                }
+                  );
+
+                  // Options do not use LONG/SHORT in the UI.
+                  // Keep an internal LONG value for compatibility.
+                  if (value === "OPTION") {
+                    updateField(
+                      "side",
+                      "LONG"
+                    );
+                  }
+                }}
                 options={[
                   "OPTION",
                   "STOCK",
@@ -366,20 +383,23 @@ export default function AddTradeModal({
                 ]}
               />
 
-              <SelectField
-                label="Side"
-                value={form.side}
-                onChange={(value) =>
-                  updateField(
-                    "side",
-                    value
-                  )
-                }
-                options={[
-                  "LONG",
-                  "SHORT",
-                ]}
-              />
+              {/* Side is only relevant for non-option assets */}
+              {form.asset_type !== "OPTION" && (
+                <SelectField
+                  label="Side"
+                  value={form.side}
+                  onChange={(value) =>
+                    updateField(
+                      "side",
+                      value
+                    )
+                  }
+                  options={[
+                    "LONG",
+                    "SHORT",
+                  ]}
+                />
+              )}
             </div>
           </section>
 
